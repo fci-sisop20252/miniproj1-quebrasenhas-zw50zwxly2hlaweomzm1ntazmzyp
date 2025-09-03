@@ -1,4 +1,4 @@
-# Guia para o Mini-Projeto 1: Quebra-Senhas Paralelo
+c# Guia para o Mini-Projeto 1: Quebra-Senhas Paralelo
 
 Este tutorial vai guiar você através da implementação completa do mini-projeto de implementação de um quebra-senhas paralelo, utilizando os conceitos estudados sobre criação de processos.
 
@@ -102,7 +102,7 @@ make test_hash
 # Teste hashes conhecidos
 ./test_hash abc      # → 900150983cd24fb0d6963f7d28e17f72
 ./test_hash 123      # → 202cb962ac59075b964b07152d234b70  
-./test_hash password # → 5f4dcc3b5aa765d61d8327deb882cf99
+./test_hash password # → c
 
 # Observe como pequenas mudanças causam hashes completamente diferentes:
 ./test_hash abc      # → 900150983cd24fb0d6963f7d28e17f72

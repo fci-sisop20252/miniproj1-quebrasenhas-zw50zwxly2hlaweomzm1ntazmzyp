@@ -31,6 +31,18 @@
  * @param password_len Comprimento da senha
  * @return 1 se incrementou com sucesso, 0 se chegou ao limite (overflow)
  */
+
+
+//funcao auxiliar
+int find_index(char c, const char *charset, int charset_len) {
+    for (int i = 0; i < charset_len; i++) {
+        if (charset[i] == c) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 int increment_password(char *password, const char *charset, int charset_len, int password_len) {
     
     // TODO 1: Implementar o algoritmo de incremento de senha
@@ -40,11 +52,26 @@ int increment_password(char *password, const char *charset, int charset_len, int
     
     // IMPLEMENTE AQUI:
     // - Percorrer password de trás para frente
-    // - Para cada posição, encontrar índice atual no charset
-    // - Incrementar índice
-    // - Se não estourou: atualizar caractere e retornar 1
-    // - Se estourou: definir como primeiro caractere e continuar loop
-    // - Se todos estouraram: retornar 0 (fim do espaço)
+    for (int i = password_len-1;i >= 0;i++){
+
+        // - Para cada posição, encontrar índice atual no charset
+        char c = password[i];
+        int index = find_index( c,charset,charset_len);
+
+        // - Incrementar índice
+        index++;    
+
+        // - Se não estourou: atualizar caractere e retornar 1
+        if (index  < charset_len){
+            password[i] = charset[index];
+            return 1;
+        }else{
+        // - Se estourou: definir como primeiro caractere e continuar loop
+            password[i] = charset[0];
+        }
+
+    }
+ // - Se todos estouraram: retornar 0 (fim do espaço)
     
     return 0;  // SUBSTITUA por sua implementação
 }
