@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
         printf("Deu erro,numero de workers esta invalido\n");
         return 1;
     }
-    // - charset não pode ser vazio
+    // - charset not null/empty
     if (charset_len == 0) {
         printf("Deu erro,charset esta vazio\n");
         return 1;
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     
     // IMPLEMENTE AQUI:
     long long passwords_per_worker = total_space / num_workers;
-    long long remainnig = total_space % num_workers;
+    long long remaining = total_space % num_workers;
     
     
     // Arrays para armazenar PIDs dos workers
@@ -133,12 +133,51 @@ int main(int argc, char *argv[]) {
 
     // IMPLEMENTE AQUI: Loop para criar workers
     for (int i = 0; i < num_workers; i++) {
-        // TODO: Calcular intervalo de senhas para este worker
-        // TODO: Converter indices para senhas de inicio e fim
+        // Calcular intervalo de senhas para este worker
+        long long start_index = i * passwords_per_worker;
+        if (i < remaining) {
+            start_index += i;
+        } else {
+            start_index += remaining;
+        }
+        
+        long long worker_passwords = passwords_per_worker;
+        if (i < remaining) {
+            worker_passwords++;
+        }
+        
+        long long end_index = start_index + worker_passwords - 1;
+        
+        // Converter indices para senhas de inicio e fim
+        char start_password[11], end_password[11];
+        index_to_password(start_index, charset, charset_len, password_len, start_password);
+        index_to_password(end_index, charset, charset_len, password_len, end_password);
+        
+        printf("Worker %d: %s até %s (%lld senhas)\n", i, start_password, end_password, worker_passwords);
+        
         // TODO 4: Usar fork() para criar processo filho
-        // TODO 5: No processo pai: armazenar PID
-        // TODO 6: No processo filho: usar execl() para executar worker
-        // TODO 7: Tratar erros de fork() e execl()
+        pid_t pid = fork();
+        
+        if (pid == -1) {
+            // TODO 7: Tratar erros de fork()
+            perror("Erro ao criar processo worker");
+            exit(1);
+        } else if (pid == 0) {
+            // TODO 6: No processo filho: usar execl() para executar worker
+            char worker_id_str[10], password_len_str[10];
+            snprintf(worker_id_str, sizeof(worker_id_str), "%d", i);
+            snprintf(password_len_str, sizeof(password_len_str), "%d", password_len);
+            
+            execl("./worker", "worker", target_hash, start_password, end_password, 
+                  charset, password_len_str, worker_id_str, NULL);
+            
+            // TODO 7: Tratar erros de execl()
+            perror("Erro ao executar worker");
+            exit(1);
+        } else {
+            // TODO 5: No processo pai: armazenar PID
+            workers[i] = pid;
+        }
     }
     
     printf("\nTodos os workers foram iniciados. Aguardando conclusão...\n");
@@ -152,6 +191,38 @@ int main(int argc, char *argv[]) {
     // - Identificar qual worker terminou
     // - Verificar se terminou normalmente ou com erro
     // - Contar quantos workers terminaram
+    
+    int workers_finished = 0;
+    for (int i = 0; i < num_workers; i++) {
+        int status;
+        pid_t finished_pid = wait(&status);
+        
+        if (finished_pid == -1) {
+            perror("Erro ao aguardar worker");
+            continue;
+        }
+        
+        // Identificar qual worker terminou
+        int worker_id = -1;
+        for (int j = 0; j < num_workers; j++) {
+            if (workers[j] == finished_pid) {
+                worker_id = j;
+                break;
+            }
+        }
+        
+        if (WIFEXITED(status)) {
+            printf("Worker %d (PID %d) terminou normalmente com código %d\n", 
+                   worker_id, finished_pid, WEXITSTATUS(status));
+        } else if (WIFSIGNALED(status)) {
+            printf("Worker %d (PID %d) terminou por sinal %d\n", 
+                   worker_id, finished_pid, WTERMSIG(status));
+        }
+        
+        workers_finished++;
+    }
+    
+    printf("Todos os %d workers terminaram.\n", workers_finished);
     
     // Registrar tempo de fim
     time_t end_time = time(NULL);
@@ -169,8 +240,57 @@ int main(int argc, char *argv[]) {
     // - Verificar o hash usando md5_string()
     // - Exibir resultado encontrado
     
+    FILE *result_file = fopen(RESULT_FILE, "r");
+    if (result_file != NULL) {
+        char line[256];
+        if (fgets(line, sizeof(line), result_file) != NULL) {
+            // Parse do formato "worker_id:password\n"
+            char *colon = strchr(line, ':');
+            if (colon != NULL) {
+                *colon = '\0';
+                int found_worker_id = atoi(line);
+                char *found_password = colon + 1;
+                
+                // Remover newline se presente
+                char *newline = strchr(found_password, '\n');
+                if (newline != NULL) {
+                    *newline = '\0';
+                }
+                
+                // Verificar o hash usando md5_string()
+                char computed_hash[33];
+                md5_string(found_password, computed_hash);
+                
+                printf("✓ SENHA ENCONTRADA!\n");
+                printf("Worker ID: %d\n", found_worker_id);
+                printf("Senha: %s\n", found_password);
+                printf("Hash calculado: %s\n", computed_hash);
+                printf("Hash alvo:      %s\n", target_hash);
+                
+                if (strcmp(computed_hash, target_hash) == 0) {
+                    printf("✓ Hash verificado com sucesso!\n");
+                } else {
+                    printf("✗ ERRO: Hash não confere!\n");
+                }
+            }
+        }
+        fclose(result_file);
+    } else {
+        printf("✗ Senha não encontrada no espaço de busca especificado.\n");
+        printf("  Verifique se o hash está correto e se o charset contém todos os caracteres.\n");
+    }
+    
     // Estatísticas finais (opcional)
     // TODO: Calcular e exibir estatísticas de performance
+    
+    printf("\n=== Estatísticas de Performance ===\n");
+    printf("Tempo total de execução: %.2f segundos\n", elapsed_time);
+    printf("Espaço de busca total: %lld combinações\n", total_space);
+    printf("Número de workers: %d\n", num_workers);
+    if (elapsed_time > 0) {
+        printf("Taxa de verificação estimada: %.0f senhas/segundo\n", total_space / elapsed_time);
+        printf("Speedup teórico com %d workers: %.1fx\n", num_workers, (double)num_workers);
+    }
     
     return 0;
 }
