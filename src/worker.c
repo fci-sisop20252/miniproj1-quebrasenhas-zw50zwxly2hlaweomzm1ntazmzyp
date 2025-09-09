@@ -44,36 +44,21 @@ int find_index(char c, const char *charset, int charset_len) {
 }
 
 int increment_password(char *password, const char *charset, int charset_len, int password_len) {
-    
-    // TODO 1: Implementar o algoritmo de incremento de senha
-    // OBJETIVO: Incrementar senha como um contador (ex: aaa -> aab -> aac -> aad...)
-    // DICA: Começar do último caractere, como somar 1 em um número
-    // DICA: Se um caractere "estoura", volta ao primeiro e incrementa o caracter a esquerda (aay -> aaz -> aba)
-    
-    // IMPLEMENTE AQUI:
-    // - Percorrer password de trás para frente
-    for (int i = password_len-1;i >= 0;i++){
-
-        // - Para cada posição, encontrar índice atual no charset
-        char c = password[i];
-        int index = find_index( c,charset,charset_len);
-
-        // - Incrementar índice
-        index++;    
-
-        // - Se não estourou: atualizar caractere e retornar 1
-        if (index  < charset_len){
+    for (int i = password_len - 1; i >= 0; i--) {
+        int index = find_index(password[i], charset, charset_len);
+        if (index == -1) return 0; 
+        index++;
+        if (index < charset_len) {
             password[i] = charset[index];
+            for (int j = i + 1; j < password_len; j++) {
+                password[j] = charset[0];
+            }
             return 1;
-        }else{
-        // - Se estourou: definir como primeiro caractere e continuar loop
+        } else {
             password[i] = charset[0];
         }
-
     }
- // - Se todos estouraram: retornar 0 (fim do espaço)
-    
-    return 0;  // SUBSTITUA por sua implementação
+    return 0;
 }
 
 /**
@@ -105,14 +90,27 @@ void save_result(int worker_id, const char *password) {
     
     // IMPLEMENTE AQUI:
     // - Tentar abrir arquivo com O_CREAT | O_EXCL | O_WRONLY
+    int fd = open(RESULT_FILE, O_CREAT | O_EXCL | O_WRONLY, 0644);
+
     // - Se sucesso: escrever resultado e fechar
+    if (fd != -1){
+        char buffer[100];
+        int n = snprintf(buffer, sizeof(buffer), "%d:%s\n", worker_id, password);
+        write(fd, buffer, n);
+        close(fd);
+    }
     // - Se falhou: outro worker já encontrou
+    else{
+        //printf("outro worker ja encontrou\n");
+    }
 }
 
 /**
  * Função principal do worker
  */
 int main(int argc, char *argv[]) {
+
+
     // Validar argumentos
     if (argc != 7) {
         fprintf(stderr, "Uso interno: %s <hash> <start> <end> <charset> <len> <id>\n", argv[0]);
@@ -146,18 +144,34 @@ int main(int argc, char *argv[]) {
     while (1) {
         // TODO 3: Verificar periodicamente se outro worker já encontrou a senha
         // DICA: A cada PROGRESS_INTERVAL senhas, verificar se arquivo resultado existe
-        
+        if (passwords_checked % PROGRESS_INTERVAL == 0) {
+            if (check_result_exists()) {
+                break;
+            }
+        }
         // TODO 4: Calcular o hash MD5 da senha atual
         // IMPORTANTE: Use a biblioteca MD5 FORNECIDA - md5_string(senha, hash_buffer)
-        
+        printf("[Worker %d]testando senha:%s\n", worker_id, current_password);
+        md5_string(current_password, computed_hash);
         // TODO 5: Comparar com o hash alvo
         // Se encontrou: salvar resultado e terminar
-        
-        // TODO 6: Incrementar para a próxima senha
-        // DICA: Use a função increment_password implementada acima
+        if (strcmp(computed_hash, target_hash) == 0) {
+        printf("[Worker %d] SENHA ENCONTRADA: %s\n", worker_id, current_password);
+        save_result(worker_id, current_password);
+        break;
+        }
         
         // TODO: Verificar se chegou ao fim do intervalo
         // Se sim: terminar loop
+        if (password_compare(current_password, end_password) >= 0) {
+            break;
+        }
+        // TODO 6: Incrementar para a próxima senha
+        // DICA: Use a função increment_password implementada acima
+        if (!increment_password(current_password, charset, charset_len, password_len)) {
+            break;
+        }
+        
         
         passwords_checked++;
     }
