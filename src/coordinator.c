@@ -67,6 +67,10 @@ int main(int argc, char *argv[]) {
     // Se não, imprimir mensagem de uso e sair com código 1
     
     // IMPLEMENTE AQUI: verificação de argc e mensagem de erro
+    if (argc != 5) {
+        printf("Deu erro,numero de args errado\n");
+        return 1;
+    }
     
     // Parsing dos argumentos (após validação)
     const char *target_hash = argv[1];
@@ -77,8 +81,22 @@ int main(int argc, char *argv[]) {
     
     // TODO: Adicionar validações dos parâmetros
     // - password_len deve estar entre 1 e 10
+    if (password_len < 1 || password_len > 10) {
+        printf("Deu erro,tamanho de senha esta invalido\n");
+        return 1;
+    }
+
     // - num_workers deve estar entre 1 e MAX_WORKERS
+    if (num_workers < 1 || num_workers > MAX_WORKERS) {
+        printf("Deu erro,numero de workers esta invalido\n");
+        return 1;
+    }
     // - charset não pode ser vazio
+    if (charset_len == 0) {
+        printf("Deu erro,charset esta vazio\n");
+        return 1;
+    }
+
     
     printf("=== Mini-Projeto 1: Quebra de Senhas Paralelo ===\n");
     printf("Hash MD5 alvo: %s\n", target_hash);
@@ -99,17 +117,20 @@ int main(int argc, char *argv[]) {
     // TODO 2: Dividir o espaço de busca entre os workers
     // Calcular quantas senhas cada worker deve verificar
     // DICA: Use divisão inteira e distribua o resto entre os primeiros workers
+
     
     // IMPLEMENTE AQUI:
-    // long long passwords_per_worker = ?
-    // long long remaining = ?
+    long long passwords_per_worker = total_space / num_workers;
+    long long remainnig = total_space % num_workers;
+    
     
     // Arrays para armazenar PIDs dos workers
     pid_t workers[MAX_WORKERS];
     
     // TODO 3: Criar os processos workers usando fork()
     printf("Iniciando workers...\n");
-    
+
+
     // IMPLEMENTE AQUI: Loop para criar workers
     for (int i = 0; i < num_workers; i++) {
         // TODO: Calcular intervalo de senhas para este worker
