@@ -192,37 +192,26 @@ int main(int argc, char *argv[]) {
     // - Verificar se terminou normalmente ou com erro
     // - Contar quantos workers terminaram
     
-    int workers_finished = 0;
+    // Aguardar especificamente cada worker pelo PID
     for (int i = 0; i < num_workers; i++) {
         int status;
-        pid_t finished_pid = wait(&status);
+        pid_t finished_pid = waitpid(workers[i], &status, 0);
         
         if (finished_pid == -1) {
-            perror("Erro ao aguardar worker");
+            perror("Erro ao aguardar worker específico");
             continue;
-        }
-        
-        // Identificar qual worker terminou
-        int worker_id = -1;
-        for (int j = 0; j < num_workers; j++) {
-            if (workers[j] == finished_pid) {
-                worker_id = j;
-                break;
-            }
         }
         
         if (WIFEXITED(status)) {
             printf("Worker %d (PID %d) terminou normalmente com código %d\n", 
-                   worker_id, finished_pid, WEXITSTATUS(status));
+                   i, finished_pid, WEXITSTATUS(status));
         } else if (WIFSIGNALED(status)) {
             printf("Worker %d (PID %d) terminou por sinal %d\n", 
-                   worker_id, finished_pid, WTERMSIG(status));
+                   i, finished_pid, WTERMSIG(status));
         }
-        
-        workers_finished++;
     }
     
-    printf("Todos os %d workers terminaram.\n", workers_finished);
+    printf("Todos os %d workers terminaram.\n", num_workers);
     
     // Registrar tempo de fim
     time_t end_time = time(NULL);
