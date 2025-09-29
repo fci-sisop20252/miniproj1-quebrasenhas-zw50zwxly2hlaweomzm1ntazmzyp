@@ -3,7 +3,7 @@
 **Aluno(s):** Nome (Matrícula), Nome (Matrícula),,,  
 
 Pedro Roberto Fernandes Noronha (10443434)
-Alice Oliveira Duarte ()
+Alice Oliveira Duarte (10419323)
 ---
 
 ## 1. Estratégia de Paralelização
@@ -134,7 +134,7 @@ time ./coordinator "5d41402abc4b2a76b9719d911017c592" 5 "abcdefghijklmnopqrstuvw
 ---
 
 **Checklist de Entrega:**
-- [ ] Código compila sem erros
-- [ ] Todos os TODOs foram implementados
-- [ ] Testes passam no `./tests/simple_test.sh`
-- [ ] Relatório preenchido
+- [x ] Código compila sem erros
+- [ x] Todos os TODOs foram implementados
+- [ x]Testes passam no `./tests/simple_test.sh`
+- [ x] Relatório preenchido
