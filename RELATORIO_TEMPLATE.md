@@ -48,13 +48,13 @@ Complete a tabela com tempos reais de execução:
 O speedup é o tempo do teste com 1 worker dividido pelo tempo com 4 workers.
 
 | Teste | 1 Worker | 2 Workers | 4 Workers | Speedup (4w) |
-|-------|----------|-----------|-----------|--------------|
+|-------|----0.00--|----0.00---|---0.00----|--------0.00----|
 | Hash: 202cb962ac59075b964b07152d234b70<br>Charset: "0123456789"<br>Tamanho: 3<br>Senha: "123" | ___s | ___s | ___s | ___ |
 | Hash: 5d41402abc4b2a76b9719d911017c592<br>Charset: "abcdefghijklmnopqrstuvwxyz"<br>Tamanho: 5<br>Senha: "hello" | ___s | ___s | ___s | ___ |
 
 **O speedup foi linear? Por quê?**
 [Analise se dobrar workers realmente dobrou a velocidade e explique o overhead de criar processos]
-
+ O speedup não foi linear. O tempo de execução foi muito baixo, mas pode se afirmar que speedup em cenarios para buscas pequenas não e eficiente pois sofre com o overhead que acaba sendo pior que o tempo de resolver o problema em si.
 ---
 
 ## 5. Desafios e Aprendizados
